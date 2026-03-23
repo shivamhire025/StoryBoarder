@@ -96,13 +96,6 @@ export const PageCard: React.FC<PageCardProps> = ({ page, onRegenerateImage, onU
             placeholder="Write the story for this page..."
           />
         </div>
-        
-        <div className="pt-4 border-t border-ink/5">
-          <p className="text-[9px] font-mono text-ink/30 uppercase leading-tight flex items-center gap-1">
-            <Sparkles className="w-2 h-2 text-amber-400/40" />
-            <span className="font-bold">Prompt:</span> {page.imagePrompt}
-          </p>
-        </div>
       </div>
     </motion.div>
   );

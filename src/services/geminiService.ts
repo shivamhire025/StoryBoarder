@@ -31,12 +31,13 @@ export const generateStoryOutline = async (
     try {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Create a ${pageCount}-page children's storybook outline.
+        contents: `Create a children's storybook outline with EXACTLY ${pageCount} pages.
         Theme: "${theme}"
         Main Character: "${characterDescription}"
         ${narrativeInstruction}
         
         For each page, provide the story text (1-2 sentences) and a detailed image prompt.
+        The 'pages' array in your JSON response MUST contain EXACTLY ${pageCount} items.
         ${characterConsistencyInstruction}
         ${styleConsistencyInstruction}
         

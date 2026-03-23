@@ -181,13 +181,7 @@ export default function App() {
       // Cover Page
       pdf.setFont('serif', 'italic');
       pdf.setFontSize(40);
-      pdf.text(story.title, pageWidth / 2, 100, { align: 'center' });
-      
-      pdf.setFont('sans', 'normal');
-      pdf.setFontSize(12);
-      pdf.setTextColor(100);
-      pdf.text(`A story about ${story.characterDescription}`, pageWidth / 2, 120, { align: 'center' });
-      pdf.text(`Theme: ${story.theme}`, pageWidth / 2, 130, { align: 'center' });
+      pdf.text(story.title, pageWidth / 2, 140, { align: 'center' });
       
       // Story Pages
       for (let i = 0; i < story.pages.length; i++) {
@@ -549,13 +543,6 @@ export default function App() {
             >
               <div className="text-center space-y-4">
                 <h2 className="text-5xl font-serif italic">{story.title}</h2>
-                <div className="flex flex-wrap items-center justify-center gap-4 text-[10px] font-mono uppercase tracking-widest text-ink/40">
-                  <span>Theme: {story.theme}</span>
-                  <span className="hidden sm:block w-1 h-1 bg-ink/20 rounded-full" />
-                  <span className="max-w-[300px] truncate" title={story.characterDescription}>
-                    Character: {story.characterDescription}
-                  </span>
-                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
