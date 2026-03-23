@@ -10,11 +10,16 @@ export const generateStoryOutline = async (
   isConsistent: boolean = true,
   isStyleConsistent: boolean = true,
   pageCount: number = 6,
+  userTitle?: string,
   retries = 3
 ): Promise<StoryOutline> => {
   const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
   const ai = new GoogleGenAI({ apiKey: apiKey! });
   
+  const titleInstruction = userTitle 
+    ? `The title of the book MUST be EXACTLY: "${userTitle}".`
+    : "Create a catchy and whimsical title for the story.";
+
   const characterConsistencyInstruction = isConsistent 
     ? "The image prompts MUST include the EXACT same character description for consistency. First, define a 'masterCharacterDescription' that is extremely detailed (clothing, colors, specific features)." 
     : "The image prompts can vary the character's appearance slightly for variety.";
@@ -32,6 +37,7 @@ export const generateStoryOutline = async (
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: `Create a children's storybook outline with EXACTLY ${pageCount} pages.
+        ${titleInstruction}
         Theme: "${theme}"
         Main Character: "${characterDescription}"
         ${narrativeInstruction}

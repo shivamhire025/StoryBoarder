@@ -57,6 +57,7 @@ export default function App() {
     isConsistent: boolean, 
     isStyleConsistent: boolean, 
     pageCount: number,
+    title?: string,
     characterImage?: { data: string; mimeType: string },
     themeImage?: { data: string; mimeType: string }
   ) => {
@@ -84,7 +85,7 @@ export default function App() {
         await Promise.all(tasks);
       }
 
-      const outline = await generateStoryOutline(finalThemeDescription, finalCharacterDescription, narrative, isConsistent, isStyleConsistent, pageCount);
+      const outline = await generateStoryOutline(finalThemeDescription, finalCharacterDescription, narrative, isConsistent, isStyleConsistent, pageCount, title);
       const newPages: Page[] = outline.pages.map((p, i) => ({
         id: Math.random().toString(36).substr(2, 9),
         pageNumber: i + 1,

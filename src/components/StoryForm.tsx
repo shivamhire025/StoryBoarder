@@ -10,6 +10,7 @@ interface StoryFormProps {
     isConsistent: boolean, 
     isStyleConsistent: boolean, 
     pageCount: number,
+    title?: string,
     characterImage?: { data: string; mimeType: string },
     themeImage?: { data: string; mimeType: string }
   ) => void;
@@ -17,6 +18,7 @@ interface StoryFormProps {
 }
 
 export const StoryForm: React.FC<StoryFormProps> = ({ onSubmit, isLoading }) => {
+  const [title, setTitle] = useState('');
   const [theme, setTheme] = useState('');
   const [character, setCharacter] = useState('');
   const [narrative, setNarrative] = useState('');
@@ -59,7 +61,7 @@ export const StoryForm: React.FC<StoryFormProps> = ({ onSubmit, isLoading }) => 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if ((theme || themeImage) && (character || characterImage)) {
-      onSubmit(theme, character, narrative, isConsistent, isStyleConsistent, pageCount, characterImage || undefined, themeImage || undefined);
+      onSubmit(theme, character, narrative, isConsistent, isStyleConsistent, pageCount, title || undefined, characterImage || undefined, themeImage || undefined);
     }
   };
 
@@ -90,6 +92,20 @@ export const StoryForm: React.FC<StoryFormProps> = ({ onSubmit, isLoading }) => 
       </div>
 
       <div className="space-y-6 bg-white/40 backdrop-blur-sm p-8 rounded-3xl border border-white/20 shadow-xl shadow-ink/5">
+        <div className="space-y-2 relative">
+          <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-ink/70">
+            <Star className="w-3 h-3 text-amber-400" />
+            Book Title (Optional)
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter a title for your book..."
+            className="w-full bg-white border border-ink/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-ink/5 focus:border-ink/20 outline-none transition-all"
+          />
+        </div>
+
         <div className="space-y-2 relative">
           <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-ink/70">
             <BookOpen className="w-3 h-3" />
