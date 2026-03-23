@@ -12,7 +12,8 @@ export const generateStoryOutline = async (
   pageCount: number = 6,
   retries = 3
 ): Promise<StoryOutline> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+  const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey: apiKey! });
   
   const characterConsistencyInstruction = isConsistent 
     ? "The image prompts MUST include the EXACT same character description for consistency. First, define a 'masterCharacterDescription' that is extremely detailed (clothing, colors, specific features)." 
@@ -91,7 +92,8 @@ export const generateStoryOutline = async (
 };
 
 export const describeCharacterFromImage = async (base64Image: string, mimeType: string, retries = 3): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+  const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey: apiKey! });
   
   for (let i = 0; i < retries; i++) {
     try {
@@ -132,7 +134,8 @@ export const describeCharacterFromImage = async (base64Image: string, mimeType: 
 };
 
 export const describeThemeFromImage = async (base64Image: string, mimeType: string, retries = 3): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+  const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey: apiKey! });
   
   for (let i = 0; i < retries; i++) {
     try {
@@ -177,7 +180,8 @@ export const generatePageImage = async (
   referenceImage?: { data: string; mimeType: string }, 
   retries = 2
 ): Promise<string | undefined> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+  const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey: apiKey! });
   
   const contents: any[] = [];
   
