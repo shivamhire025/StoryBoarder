@@ -5,18 +5,34 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react';
-import { Plus, Download, ArrowLeft, AlertCircle, Loader2, Star, Cloud, Ghost, Rabbit, Trees, Sparkles as SparklesIcon, Bird, Fish } from 'lucide-react';
+import { Plus, Download, ArrowLeft, AlertCircle, Loader2, Star, Cloud, Ghost, Rabbit, Trees, Sparkles as SparklesIcon, Bird, Fish, LogIn, LogOut, Library, Save, Check } from 'lucide-react';
 import { Story, Page } from './types';
 import { generateStoryOutline, generatePageImage, describeCharacterFromImage, describeThemeFromImage } from './services/geminiService';
 import { StoryForm } from './components/StoryForm';
 import { PageCard } from './components/PageCard';
+import { DraftsLibrary } from './components/DraftsLibrary';
+import { LoginForm } from './components/LoginForm';
+import { auth, logout, db, collection, doc, setDoc, Timestamp, onAuthStateChanged, User } from './firebase';
 import jsPDF from 'jspdf';
 
 export default function App() {
   const [story, setStory] = useState<Story | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthReady(true);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -78,10 +94,13 @@ export default function App() {
       }));
 
       setStory({
+        userId: user?.uid || 'anonymous',
         title: outline.title,
         theme: finalThemeDescription,
         characterDescription: finalCharacterDescription,
         pages: newPages,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       // Generate images sequentially to avoid rate limits and for better UX
@@ -89,6 +108,11 @@ export default function App() {
 
       for (const page of newPages) {
         try {
+          // Add a small delay between requests to avoid hitting rate limits
+          if (page.pageNumber > 1) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+          }
+          
           // Use the first page's image as a reference for all subsequent pages to maintain consistency
           const referenceImage = firstPageImageUrl ? { data: firstPageImageUrl, mimeType: 'image/png' } : undefined;
           const imageUrl = await generatePageImage(page.imagePrompt, referenceImage);
@@ -110,18 +134,36 @@ export default function App() {
           console.error("Error generating image:", imgErr);
           setStory(prev => {
             if (!prev) return null;
-            return {
+            const updated = {
               ...prev,
               pages: prev.pages.map(p => 
                 p.id === page.id ? { ...p, isGeneratingImage: false } : p
               )
             };
+            // Auto-save the draft if user is logged in
+            if (user) {
+              const storyId = updated.id || Math.random().toString(36).substr(2, 9);
+              const storyRef = doc(db, 'users', user.uid, 'stories', storyId);
+              setDoc(storyRef, {
+                ...updated,
+                id: storyId,
+                userId: user.uid,
+                updatedAt: Timestamp.now(),
+                createdAt: updated.createdAt instanceof Date ? Timestamp.fromDate(updated.createdAt) : updated.createdAt || Timestamp.now(),
+              }).catch(e => console.error("Auto-save failed:", e));
+            }
+            return updated;
           });
         }
       }
     } catch (err: any) {
       console.error("Error generating story:", err);
-      setError("An unexpected error occurred. Please try again.");
+      const errorMessage = err?.message || "";
+      if (errorMessage.includes("limit: 0")) {
+        setError(errorMessage);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -227,6 +269,53 @@ export default function App() {
       };
     });
   };
+
+  const handleSaveStory = async () => {
+    if (!story || !user) {
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const storyId = story.id || Math.random().toString(36).substr(2, 9);
+      const storyRef = doc(db, 'users', user.uid, 'stories', storyId);
+      
+      const storyToSave = {
+        ...story,
+        id: storyId,
+        userId: user.uid,
+        updatedAt: Timestamp.now(),
+        createdAt: story.createdAt instanceof Date ? Timestamp.fromDate(story.createdAt) : story.createdAt || Timestamp.now(),
+      };
+
+      await setDoc(storyRef, storyToSave);
+      setStory(prev => prev ? { ...prev, id: storyId } : null);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error("Error saving story:", err);
+      setError("Failed to save story. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLoadStory = (loadedStory: Story) => {
+    setStory(loadedStory);
+    setShowLibrary(false);
+  };
+
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-paper">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginForm onSuccess={() => {}} />;
+  }
 
   return (
     <div className="min-h-screen pb-20 relative overflow-hidden bg-paper">
@@ -360,32 +449,78 @@ export default function App() {
             </div>
           </div>
 
-          {story && (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setStory(null)}
-                className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest hover:text-ink/60 transition-colors"
-                disabled={isExporting}
-              >
-                <ArrowLeft className="w-3 h-3" />
-                New Story
-              </button>
-              <button
-                onClick={handleDownloadPDF}
-                disabled={isExporting}
-                className="bg-ink text-paper px-4 py-2 rounded-lg text-[10px] font-mono uppercase tracking-widest hover:bg-ink/90 transition-colors flex items-center gap-2 disabled:opacity-50"
-              >
-                {isExporting ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Download className="w-3 h-3" />
-                )}
-                {isExporting ? 'Exporting...' : 'Download PDF'}
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            {isAuthReady && user && (
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setShowLibrary(true)}
+                  className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest hover:text-indigo-600 transition-colors"
+                >
+                  <Library className="w-3 h-3" />
+                  Library
+                </button>
+                <button 
+                  onClick={logout}
+                  className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest hover:text-red-500 transition-colors"
+                >
+                  <LogOut className="w-3 h-3" />
+                  Sign Out
+                </button>
+              </div>
+            )}
+
+            {story && (
+              <div className="flex items-center gap-4 border-l border-ink/10 pl-4">
+                <button
+                  onClick={() => setStory(null)}
+                  className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest hover:text-ink/60 transition-colors"
+                  disabled={isExporting}
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                  New Story
+                </button>
+                
+                <button
+                  onClick={handleSaveStory}
+                  disabled={isSaving || !user}
+                  className={`flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest transition-all ${saveSuccess ? 'text-green-600' : 'hover:text-indigo-600'} disabled:opacity-30`}
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : saveSuccess ? (
+                    <Check className="w-3 h-3" />
+                  ) : (
+                    <Save className="w-3 h-3" />
+                  )}
+                  {isSaving ? 'Saving...' : saveSuccess ? 'Saved!' : 'Save Draft'}
+                </button>
+
+                <button
+                  onClick={handleDownloadPDF}
+                  disabled={isExporting}
+                  className="bg-ink text-paper px-4 py-2 rounded-lg text-[10px] font-mono uppercase tracking-widest hover:bg-ink/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Download className="w-3 h-3" />
+                  )}
+                  {isExporting ? 'Exporting...' : 'Download PDF'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
+
+      <AnimatePresence>
+        {showLibrary && (
+          <DraftsLibrary 
+            onLoadStory={handleLoadStory} 
+            onClose={() => setShowLibrary(false)} 
+          />
+        )}
+      </AnimatePresence>
 
       <main className="max-w-7xl mx-auto px-6 pt-12">
         <AnimatePresence mode="wait">

@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StoryOutline } from "../types";
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const generateStoryOutline = async (
   theme: string,
   characterDescription: string,
@@ -87,7 +89,6 @@ export const generateStoryOutline = async (
   }
   return { title: "", masterCharacterDescription: "", masterStyleDescription: "", pages: [] };
 };
-;
 
 export const describeCharacterFromImage = async (base64Image: string, mimeType: string, retries = 3): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
@@ -171,8 +172,6 @@ export const describeThemeFromImage = async (base64Image: string, mimeType: stri
   return "A magical world";
 };
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const generatePageImage = async (
   prompt: string, 
   referenceImage?: { data: string; mimeType: string }, 
@@ -220,11 +219,32 @@ export const generatePageImage = async (
                           error?.error?.status === 'RESOURCE_EXHAUSTED';
       
       if (isRateLimit && i < retries - 1) {
-        const waitTime = 2000 + Math.random() * 1000;
+        // Try to extract retryDelay from the error details if available
+        let waitTime = Math.pow(2, i) * 5000 + Math.random() * 1000;
+        
+        try {
+          const details = error?.error?.details || [];
+          const retryInfo = details.find((d: any) => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
+          if (retryInfo?.retryDelay) {
+            const seconds = parseInt(retryInfo.retryDelay.replace('s', ''));
+            if (!isNaN(seconds)) {
+              waitTime = (seconds + 1) * 1000; // Add 1s buffer
+            }
+          }
+        } catch (e) {
+          // Fallback to exponential backoff
+        }
+
         console.warn(`Rate limit hit, retrying in ${Math.round(waitTime)}ms... (Attempt ${i + 1}/${retries})`);
         await sleep(waitTime);
         continue;
       }
+
+      // If it's a 'limit: 0' error, provide a more helpful message
+      if (errorMessage.includes('limit: 0')) {
+        throw new Error("The free tier quota for image generation is currently unavailable (Limit: 0). This often happens right after switching plans. Please wait 10-15 minutes for the platform to reset your free tier access.");
+      }
+      
       throw error;
     }
   }

@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: /users/{userId}/stories
+    // Document ID: {storyId}
+    // Fields:
+    //   - id: string (optional)
+    //   - userId: string (required, must match owner)
+    //   - title: string (required, max 100 chars)
+    //   - theme: string (required, max 500 chars)
+    //   - characterDescription: string (required, max 1000 chars)
+    //   - createdAt: timestamp (required)
+    //   - updatedAt: timestamp (required)
+    //   - pages: list (required, max 10 items)
+    //     - id: string
+    //     - pageNumber: int
+    //     - text: string
+    //     - imagePrompt: string
+    //     - imageUrl: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidStory(data) {
+      return data.keys().hasAll(['userId', 'title', 'theme', 'characterDescription', 'pages', 'createdAt', 'updatedAt']) &&
+             data.userId is string &&
+             data.title is string && data.title.size() <= 100 &&
+             data.theme is string && data.theme.size() <= 500 &&
+             data.characterDescription is string && data.characterDescription.size() <= 1000 &&
+             data.pages is list && data.pages.size() <= 10 &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "shivamhire025@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User stories
+    match /users/{userId}/stories/{storyId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidStory(request.resource.data) && request.resource.data.userId == userId;
+      allow update: if isOwner(userId) && isValidStory(request.resource.data) && request.resource.data.userId == userId;
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // User profile (for role checking)
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.role == 'user';
+      allow update: if isAdmin(); // Only admins can change roles
+    }
+  }
+}

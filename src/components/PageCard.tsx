@@ -43,10 +43,21 @@ export const PageCard: React.FC<PageCardProps> = ({ page, onRegenerateImage, onU
                 <p className="text-xs font-mono uppercase tracking-widest text-amber-600/60">Painting Scene...</p>
               </>
             ) : (
-              <>
-                <ImageIcon className="w-8 h-8 mb-2 opacity-20" />
-                <p className="text-xs font-mono uppercase tracking-widest">No Image Generated</p>
-              </>
+              <div className="flex flex-col items-center gap-3">
+                <div className="p-3 bg-rose-50 rounded-2xl">
+                  <ImageIcon className="w-8 h-8 text-rose-300" />
+                </div>
+                <div>
+                  <p className="text-xs font-serif italic text-rose-500">Image failed to generate</p>
+                  <p className="text-[9px] font-mono uppercase tracking-widest text-rose-300 mt-1">Quota limit reached</p>
+                </div>
+                <button 
+                  onClick={() => onRegenerateImage(page.id)}
+                  className="mt-2 px-4 py-2 bg-rose-500 text-white rounded-full text-[10px] font-mono uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm active:scale-95"
+                >
+                  Retry Generation
+                </button>
+              </div>
             )}
           </div>
         )}

@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "Story": {
+      "title": "Story",
+      "description": "A generated children's storybook draft.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the story." },
+        "userId": { "type": "string", "description": "The ID of the user who owns this story." },
+        "title": { "type": "string", "description": "The title of the story." },
+        "theme": { "type": "string", "description": "The theme or setting of the story." },
+        "characterDescription": { "type": "string", "description": "The description of the main character." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the story was created." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the story was last updated." },
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "pageNumber": { "type": "integer" },
+              "text": { "type": "string" },
+              "imagePrompt": { "type": "string" },
+              "imageUrl": { "type": "string" }
+            },
+            "required": ["id", "pageNumber", "text", "imagePrompt"]
+          }
+        }
+      },
+      "required": ["userId", "title", "theme", "characterDescription", "pages"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/stories/{storyId}": {
+      "schema": "Story",
+      "description": "Collection of stories for a specific user."
+    }
+  }
+}

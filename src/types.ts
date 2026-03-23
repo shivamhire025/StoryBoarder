@@ -17,10 +17,14 @@ declare global {
 }
 
 export interface Story {
+  id?: string;
+  userId: string;
   title: string;
-  characterDescription: string;
   theme: string;
+  characterDescription: string;
   pages: Page[];
+  createdAt: any;
+  updatedAt: any;
 }
 
 export interface StoryOutline {
