@@ -552,7 +552,9 @@ export default function App() {
                 <div className="flex flex-wrap items-center justify-center gap-4 text-[10px] font-mono uppercase tracking-widest text-ink/40">
                   <span>Theme: {story.theme}</span>
                   <span className="hidden sm:block w-1 h-1 bg-ink/20 rounded-full" />
-                  <span>Character: {story.characterDescription}</span>
+                  <span className="max-w-[300px] truncate" title={story.characterDescription}>
+                    Character: {story.characterDescription}
+                  </span>
                 </div>
               </div>
 

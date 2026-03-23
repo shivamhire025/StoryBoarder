@@ -244,9 +244,9 @@ export const generatePageImage = async (
         continue;
       }
 
-      // If it's a 'limit: 0' error, provide a more helpful message
-      if (errorMessage.includes('limit: 0')) {
-        throw new Error("The free tier quota for image generation is currently unavailable (Limit: 0). This often happens right after switching plans. Please wait 10-15 minutes for the platform to reset your free tier access.");
+      // If it's a 'limit: 0' or quota error, provide a more helpful message
+      if (errorMessage.includes('limit: 0') || errorMessage.includes('quota') || errorStatus === 'RESOURCE_EXHAUSTED') {
+        throw new Error("API Quota or Rate Limit reached. If you are on a paid plan, this is likely a temporary 'Requests Per Minute' limit. Please wait a moment and use the 'Retry' button on individual pages to space out the requests.");
       }
       
       throw error;
