@@ -111,7 +111,7 @@ export default function App() {
         try {
           // Add a small delay between requests to avoid hitting rate limits
           if (page.pageNumber > 1) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await new Promise(resolve => setTimeout(resolve, 5000));
           }
           
           // Use the first page's image as a reference for all subsequent pages to maintain consistency

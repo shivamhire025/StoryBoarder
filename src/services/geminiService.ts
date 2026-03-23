@@ -185,7 +185,7 @@ export const describeThemeFromImage = async (base64Image: string, mimeType: stri
 export const generatePageImage = async (
   prompt: string, 
   referenceImage?: { data: string; mimeType: string }, 
-  retries = 2
+  retries = 5
 ): Promise<string | undefined> => {
   const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
   const ai = new GoogleGenAI({ apiKey: apiKey! });
@@ -231,7 +231,7 @@ export const generatePageImage = async (
       
       if (isRateLimit && i < retries - 1) {
         // Try to extract retryDelay from the error details if available
-        let waitTime = Math.pow(2, i) * 5000 + Math.random() * 1000;
+        let waitTime = Math.pow(2, i) * 6000 + Math.random() * 2000;
         
         try {
           const details = error?.error?.details || [];
@@ -253,7 +253,7 @@ export const generatePageImage = async (
 
       // If it's a 'limit: 0' or quota error, provide a more helpful message
       if (errorMessage.includes('limit: 0') || errorMessage.includes('quota') || errorStatus === 'RESOURCE_EXHAUSTED') {
-        throw new Error("API Quota or Rate Limit reached. If you are on a paid plan, this is likely a temporary 'Requests Per Minute' limit. Please wait a moment and use the 'Retry' button on individual pages to space out the requests.");
+        throw new Error("API Quota or Rate Limit reached. SOLUTION: Go to Google AI Studio Settings > Billing and set up a 'Pay-as-you-go' plan. This will increase your Requests Per Minute (RPM) significantly for your team to test.");
       }
       
       throw error;
