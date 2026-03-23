@@ -87,11 +87,32 @@ export const generateStoryOutline = async (
                           error?.error?.status === 'RESOURCE_EXHAUSTED';
       
       if (isRateLimit && i < retries - 1) {
-        const waitTime = Math.pow(2, i) * 2000 + Math.random() * 1000;
+        // Try to extract retryDelay from the error details if available
+        let waitTime = Math.pow(2, i) * 6000 + Math.random() * 2000;
+        
+        try {
+          const details = error?.error?.details || [];
+          const retryInfo = details.find((d: any) => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
+          if (retryInfo?.retryDelay) {
+            const seconds = parseInt(retryInfo.retryDelay.replace('s', ''));
+            if (!isNaN(seconds)) {
+              waitTime = (seconds + 1) * 1000; // Add 1s buffer
+            }
+          }
+        } catch (e) {
+          // Fallback to exponential backoff
+        }
+
         console.warn(`Rate limit hit on outline generation, retrying in ${Math.round(waitTime)}ms... (Attempt ${i + 1}/${retries})`);
         await sleep(waitTime);
         continue;
       }
+      
+      // If it's a 'limit: 0' or quota error, provide a more helpful message
+      if (errorMessage.includes('limit: 0') || errorMessage.includes('quota') || errorStatus === 'RESOURCE_EXHAUSTED') {
+        throw new Error("API Quota or Rate Limit reached. Since you have billing set up, please ensure: 1. Your API Key was created in the EXACT Google Cloud Project that has billing enabled. 2. You have updated the Vercel environment variable with this NEW key. 3. You have redeployed the app on Vercel.");
+      }
+
       throw error;
     }
   }
@@ -129,11 +150,32 @@ export const describeCharacterFromImage = async (base64Image: string, mimeType: 
                           error?.error?.status === 'RESOURCE_EXHAUSTED';
       
       if (isRateLimit && i < retries - 1) {
-        const waitTime = Math.pow(2, i) * 2000 + Math.random() * 1000;
+        // Try to extract retryDelay from the error details if available
+        let waitTime = Math.pow(2, i) * 6000 + Math.random() * 2000;
+        
+        try {
+          const details = error?.error?.details || [];
+          const retryInfo = details.find((d: any) => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
+          if (retryInfo?.retryDelay) {
+            const seconds = parseInt(retryInfo.retryDelay.replace('s', ''));
+            if (!isNaN(seconds)) {
+              waitTime = (seconds + 1) * 1000; // Add 1s buffer
+            }
+          }
+        } catch (e) {
+          // Fallback to exponential backoff
+        }
+
         console.warn(`Rate limit hit on character description, retrying in ${Math.round(waitTime)}ms... (Attempt ${i + 1}/${retries})`);
         await sleep(waitTime);
         continue;
       }
+      
+      // If it's a 'limit: 0' or quota error, provide a more helpful message
+      if (errorMessage.includes('limit: 0') || errorMessage.includes('quota') || errorStatus === 'RESOURCE_EXHAUSTED') {
+        throw new Error("API Quota or Rate Limit reached. Since you have billing set up, please ensure: 1. Your API Key was created in the EXACT Google Cloud Project that has billing enabled. 2. You have updated the Vercel environment variable with this NEW key. 3. You have redeployed the app on Vercel.");
+      }
+
       throw error;
     }
   }
@@ -171,11 +213,32 @@ export const describeThemeFromImage = async (base64Image: string, mimeType: stri
                           error?.error?.status === 'RESOURCE_EXHAUSTED';
       
       if (isRateLimit && i < retries - 1) {
-        const waitTime = Math.pow(2, i) * 2000 + Math.random() * 1000;
+        // Try to extract retryDelay from the error details if available
+        let waitTime = Math.pow(2, i) * 6000 + Math.random() * 2000;
+        
+        try {
+          const details = error?.error?.details || [];
+          const retryInfo = details.find((d: any) => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
+          if (retryInfo?.retryDelay) {
+            const seconds = parseInt(retryInfo.retryDelay.replace('s', ''));
+            if (!isNaN(seconds)) {
+              waitTime = (seconds + 1) * 1000; // Add 1s buffer
+            }
+          }
+        } catch (e) {
+          // Fallback to exponential backoff
+        }
+
         console.warn(`Rate limit hit on theme description, retrying in ${Math.round(waitTime)}ms... (Attempt ${i + 1}/${retries})`);
         await sleep(waitTime);
         continue;
       }
+      
+      // If it's a 'limit: 0' or quota error, provide a more helpful message
+      if (errorMessage.includes('limit: 0') || errorMessage.includes('quota') || errorStatus === 'RESOURCE_EXHAUSTED') {
+        throw new Error("API Quota or Rate Limit reached. Since you have billing set up, please ensure: 1. Your API Key was created in the EXACT Google Cloud Project that has billing enabled. 2. You have updated the Vercel environment variable with this NEW key. 3. You have redeployed the app on Vercel.");
+      }
+
       throw error;
     }
   }
@@ -253,7 +316,7 @@ export const generatePageImage = async (
 
       // If it's a 'limit: 0' or quota error, provide a more helpful message
       if (errorMessage.includes('limit: 0') || errorMessage.includes('quota') || errorStatus === 'RESOURCE_EXHAUSTED') {
-        throw new Error("API Quota or Rate Limit reached. SOLUTION: Go to Google AI Studio Settings > Billing and set up a 'Pay-as-you-go' plan. This will increase your Requests Per Minute (RPM) significantly for your team to test.");
+        throw new Error("API Quota or Rate Limit reached. Since you have billing set up, please ensure: 1. Your API Key was created in the EXACT Google Cloud Project that has billing enabled. 2. You have updated the Vercel environment variable with this NEW key. 3. You have redeployed the app on Vercel.");
       }
       
       throw error;
