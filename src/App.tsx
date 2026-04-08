@@ -14,6 +14,7 @@ import { DraftsLibrary } from './components/DraftsLibrary';
 import { LoginForm } from './components/LoginForm';
 import { auth, logout, db, collection, doc, setDoc, Timestamp, onAuthStateChanged, User } from './firebase';
 import jsPDF from 'jspdf';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   const [story, setStory] = useState<Story | null>(null);
@@ -587,6 +588,7 @@ export default function App() {
           </p>
         </footer>
       )}
+      <Analytics />
     </div>
   );
 }
